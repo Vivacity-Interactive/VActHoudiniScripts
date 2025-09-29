@@ -1,0 +1,90 @@
+// settings
+int b_fixed = chi('bfixedbounds');
+int b_custom = chi('bcustomlayers');
+
+// point attributes
+string position_atr = chs('position');
+string scale_atr = chs('scale');
+string variant_atr = chs('variant');
+string orient_atr = chs('orient');
+
+// primitive attributes
+string bound_min_atr = chs('min');
+string bound_max_atr = chs('max');
+
+// volume layer attributes
+string height_atr = chs('height');
+string mask_atr = chs('mask');
+
+// base parameters
+float blend = chf('blend');
+float power = chf('power');
+
+vector exclude_axis = chv('exclaxis');
+vector _min = chv('fixedmin');
+vector _max = chv('fixedmax');
+
+// inputs
+int geo_pts = 2;
+int geo_rhs = 1;
+int geo_lhs = 0;
+
+vector pos = volumeindextopos(geo_lhs, height_atr, set(@ix,@iy,@iz));
+
+int lut_height[] = findattribval(geo_rhs, "prim", "name", height_atr);
+int lut_mask[] = findattribval(geo_rhs, "prim", "name", mask_atr);
+
+int _k = min(len(lut_height), len(lut_mask));
+
+float height = 0;
+float mask = 0;
+        
+//float _mask_log = 0;
+
+float _eps = 1e-6;
+vector _inf_mask = 1.0 / max(1.0 - exclude_axis, _eps);
+
+int _n = npoints(geo_pts);
+for (int i = 0; i < _n; ++i)
+{
+    int _var = point(geo_pts, variant_atr, i);
+    int b_valid = _var >= 0 && _var < _k;
+    if (!b_valid) { continue; }
+    
+    vector _pos = point(geo_pts, position_atr, i);
+    vector _scale = point(geo_pts, scale_atr, i);
+    vector4 _orient = point(geo_pts, orient_atr, i);
+    
+    vector _off_pos = (pos - _pos);
+    vector _off_orient = qrotate(qinvert(_orient), _off_pos);
+    vector _loc_pos = _off_orient / _scale;
+    
+    int _prim_height = lut_height[_var];
+    int _prim_mask = lut_mask[_var];
+    
+    if (!b_fixed)
+    {
+        _min = prim(geo_rhs, bound_min_atr, _var);
+        _max = prim(geo_rhs, bound_max_atr, _var);
+    }
+    
+    vector dist = min(_loc_pos - _min, _max - _loc_pos);
+    dist = max(dist, 0);
+    
+    float edge_dist = min(dist * _inf_mask);
+    float _edge_mask = smooth(0, power, edge_dist);
+    
+    //_mask_log = _edge_mask;
+    
+    vector _loc_up = normalize(qconvert(_orient));
+    float _height = volumesample(geo_rhs, _prim_height, _loc_pos) * length(_scale * _loc_up);
+    float _mask = volumesample(geo_rhs, _prim_mask, _loc_pos) * _edge_mask;
+    
+    height += _height * _mask;
+    mask += _mask;
+}
+
+float _blend = (mask > 0) ? height/mask : @height;
+@height = _blend * (1.0 - @mask) + @height * @mask;
+
+//@mask = _mask_log;
