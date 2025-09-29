@@ -7,6 +7,7 @@ string position_atr = chs('position');
 string scale_atr = chs('scale');
 string variant_atr = chs('variant');
 string orient_atr = chs('orient');
+string blend_atr = chs('blendx');
 
 // primitive attributes
 string bound_min_atr = chs('min');
@@ -54,6 +55,7 @@ for (int i = 0; i < _n; ++i)
     vector _pos = point(geo_pts, position_atr, i);
     vector _scale = point(geo_pts, scale_atr, i);
     vector4 _orient = point(geo_pts, orient_atr, i);
+    float _blendx = point(geo_pts, blend_atr, i);
     
     vector _off_pos = (pos - _pos);
     vector _off_orient = qrotate(qinvert(_orient), _off_pos);
@@ -78,13 +80,12 @@ for (int i = 0; i < _n; ++i)
     
     vector _loc_up = normalize(qconvert(_orient));
     float _height = volumesample(geo_rhs, _prim_height, _loc_pos) * length(_scale * _loc_up);
-    float _mask = volumesample(geo_rhs, _prim_mask, _loc_pos) * _edge_mask;
+    float _mask = volumesample(geo_rhs, _prim_mask, _loc_pos) * _blendx * _edge_mask;
     
     height += _height * _mask;
     mask += _mask;
 }
 
 float _blend = (mask > 0) ? height/mask : @height;
-@height = _blend * (1.0 - @mask) + @height * @mask;
-
+@height = (1.0 - blend) * @height + blend * (_blend * (1.0 - @mask) + @height * @mask);
 //@mask = _mask_log;

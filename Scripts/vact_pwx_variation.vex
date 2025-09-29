@@ -15,5 +15,5 @@ vector axis = normalize(chv('up'));
 float angle = fit01(noise(@P*seed), -PI, PI);
 p@orient = quaternion(angle, axis);
 v@scale = scalemin + scale * scalerange;
-i@variant = int(noise(posseed*84)*variantcount);
+i@variant = clamp(int(noise(posseed*84)*variantcount), 0, variantcount - 1);
 f@blend = blendmin + noise(posseed*21) * (blendmax - blendmin);
