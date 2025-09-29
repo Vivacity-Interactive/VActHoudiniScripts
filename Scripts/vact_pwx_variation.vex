@@ -1,0 +1,19 @@
+int _seed = chi('seed');
+int seed = (_seed == 0) + (_seed != 0) * _seed;
+int bscaleuniform = chi('bscaleuniform');
+int variantcount = chi('variantcount');
+vector scalemin = chv('scalemin');
+vector scalemax = chv('scalemax');
+vector scalerange = scalemax - scalemin;
+vector posseed = @P*seed*42;
+float blendmin = chf('blendmin');
+float blendmax = chf('blendmax');
+
+float uscale = noise(posseed);
+vector scale = bscaleuniform ? vector(uscale) : noise(posseed);
+vector axis = normalize(chv('up'));
+float angle = fit01(noise(@P*seed), -PI, PI);
+p@orient = quaternion(angle, axis);
+v@scale = scalemin + scale * scalerange;
+i@variant = int(noise(posseed*84)*variantcount);
+f@blend = blendmin + noise(posseed*21) * (blendmax - blendmin);
