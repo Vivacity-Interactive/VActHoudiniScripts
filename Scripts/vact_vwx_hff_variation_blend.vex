@@ -79,7 +79,7 @@ for (int i = 0; i < _n; ++i)
     //_mask_log = _edge_mask;
     
     vector _loc_up = normalize(qconvert(_orient));
-    float _height = volumesample(geo_rhs, _prim_height, _loc_pos) * length(_scale * _loc_up);
+    float _height = volumesample(geo_rhs, _prim_height, _loc_pos) * _scale;// length(_scale * _loc_up);
     float _mask = volumesample(geo_rhs, _prim_mask, _loc_pos) * _blendx * _edge_mask;
     
     height += _height * _mask;
